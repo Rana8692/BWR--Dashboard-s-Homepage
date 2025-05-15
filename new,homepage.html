@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            margin: 0;
+            overflow-x: hidden; /* Prevent horizontal scrollbar during animation */
+        }
+
+        /* Updated Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Changed to 90% transparent (10% opacity) */
+            background-color: rgba(31, 41, 55, 0.1); /* Tailwind gray-800 with 10% opacity */
+            backdrop-filter: blur(4px); /* Optional: Adds a blur effect to the background */
+            -webkit-backdrop-filter: blur(4px); /* For Safari */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup-content {
+            background-color: #ffffff; /* White background, consistent with cards */
+            padding: 2rem;
+            border-radius: 1rem; /* Consistent with cards */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Softer shadow */
+            text-align: center;
+            width: 90%;
+            max-width: 420px; /* Slightly adjusted max-width */
+            position: relative;
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out;
+        }
+
+        .popup-overlay.active .popup-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .popup-close-btn {
+            position: absolute;
+            top: 0.75rem; /* Adjusted position */
+            right: 0.75rem; /* Adjusted position */
+            font-size: 1.5rem; /* Slightly smaller */
+            color: #9ca3af; /* Tailwind gray-400 */
+            background: transparent;
+            border: none;
+            padding: 0.25rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .popup-close-btn:hover {
+            color: #4b5563; /* Tailwind gray-600 */
+        }
+
+        #popup-greeting {
+            font-size: 1.625rem; /* text-xl or a bit larger */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* Tailwind gray-800, matching card titles */
+            margin-bottom: 0.75rem;
+        }
+        #popup-greeting span { /* For potential username styling if added later */
+            color: #3b82f6; /* Tailwind blue-500 for emphasis */
+        }
+
+
+        .popup-content p { /* The sub-message in the popup */
+            font-size: 0.9375rem; /* Slightly smaller than base */
+            color: #4b5563; /* Tailwind gray-600 */
+            margin-bottom: 1.75rem; /* Increased margin before button */
+        }
+
+        #popup-enter-btn { /* Uses card-button styles defined below */
+            width: 100%;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            font-weight: 500; /* Ensure it's medium weight */
+        }
+
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .header {
+            background-color: #1f2937;
+            color: white;
+            padding: 1rem;
+            border-radius: 0rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .header.animate {
+             animation: fadeInSlideUp 0.8s ease-out forwards;
+        }
+
+
+        @media (min-width: 768px) {
+            .header {
+                padding: 2rem;
+            }
+        }
+
+        .header-text {
+            max-width: 80%;
+        }
+
+        .header-text p {
+            font-size: 1rem;
+            font-weight: 400;
+            margin-top: 0.5rem;
+        }
+
+        .profile-photo {
+            width: 7.5rem;
+            height: 7.5rem;
+            border-radius: 9999px;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.18);
+        }
+
+        .card i {
+            font-size: 1.75rem;
+            color: #3b82f6;
+            margin-bottom: 0.625rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .card-description {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 0.9375rem;
+            flex-grow: 1;
+        }
+
+        .card-button { /* Shared by cards and popup button */
+            background-color: #3b82f6; /* Tailwind blue-500 */
+            color: #fff;
+            border: none;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 0.625rem 0.9375rem; /* py-2.5 px-3.5 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            display: inline-block;
+        }
+
+        .card-button:hover {
+            background-color: #2563eb; /* Tailwind blue-600 */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInSlideUpCards {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="welcome-popup" class="popup-overlay"> <div class="popup-content"> <button id="popup-close" class="popup-close-btn" aria-label="Close popup">&times;</button> <h2 id="popup-greeting"></h2> <p>Ready to dive into your company's performance data?</p> <button id="popup-enter-btn" class="card-button">Enter Dashboard</button> </div>
+    </div>
+
+    <div class="header"> <div class="header-text">
+            <b id="dashboard-main-title" class="text-2xl font-semibold">Dashboard</b>
+            <p id="dashboard-welcome-message" class="text-base font-normal mt-2">Loading overview...</p>
+        </div>
+        <img src="https://i.ibb.co/0Rbg3B4T/basant-sir-image-modified.png" alt="Profile Photo" class="profile-photo" onerror="this.onerror=null; this.src='https://placehold.co/120x120/263238/FFFFFF?text=Director';">
+    </div>
+
+    <div id="main-dashboard-view" class="p-4 md:p-8">
+        <div class="dashboard">
+            <div class="card">
+                <i class="fas fa-tasks"></i>
+                <div class="card-title">Staff Pending Works</div>
+                <div class="card-description">
+                    View and manage all pending tasks assigned to staff members.
+                </div>
+                <a href="https://lookerstudio.google.com/reporting/6eeb1bbc-8db4-40d6-9cb7-c563b52691ae/page/HnCqD" class="card-button" target="_blank">View Details</a>
+            </div>
+             <div class="card">
+                <i class="fas fa-star"></i>
+                <div class="card-title">Scoring System</div>
+                <div class="card-description">
+                    Check the performance scores and rankings for staff and departments.
+                </div>
+                <a href="https://lookerstudio.google.com/reporting/1264114d-5269-4ed0-871d-47d3658279d1/page/zdGtD" class="card-button" target="_blank">View Details</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-check-circle"></i>
+                <div class="card-title">Leave Approvals</div>
+                <div class="card-description">
+                    Review and approve or reject leave requests submitted by staff.
+                </div>
+                <a href="https://lookerstudio.google.com/embed/reporting/4b576fa1-4a50-4ce9-8323-b1f2da46224b/page/9BvsD" class="card-button" target="_blank">View Details</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-user-plus"></i>
+                <div class="card-title">Delegate Task to Staff</div>
+                <div class="card-description">
+                    Assign new tasks or shift workload to other staff members easily.
+                </div>
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSfLKzMN9L1bGkSeWeTQ5zGlfzrzV8G4p8XNSmxLnIQRQ92gCA/viewform?usp=sf_link" class="card-button" target="_blank">Delegate Now</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-calendar-alt"></i>
+                <div class="card-title">Date Range MIS Score</div>
+                <div class="card-description">
+                    View MIS performance data filtered by selected date ranges.
+                </div>
+                <a href="https://docs.google.com/spreadsheets/d/1M82y6mMsFefrwss8SRbjODr4x_eq8xgEb5ZXZHVlxp0/edit?usp=sharing" class="card-button" target="_blank">View Details</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-plane"></i>
+                <div class="card-title">Travel Details V1.3</div>
+                <div class="card-description">
+                    Access the latest version of the staff travel records and reports.
+                </div>
+                <a href="https://sites.google.com/buildwealthrealtors.com/director/travel-page" class="card-button" target="_blank">View Details</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-clock"></i>
+                <div class="card-title">Attendance Records</div>
+                <div class="card-description">
+                    Monitor staff check-in, check-out times, and attendance history.
+                </div>
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTtQLENf-eb6a21dRe6nyWoh6R3HJjKxbSCcHDPxEqjhihh2zP8KnonLD-9xO3bndA9uNDqFHAlivmF/pubhtml?gid=373645850&single=true" class="card-button" target="_blank">View Records</a>
+            </div>
+            <div class="card">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <div class="card-title">Billing FMS - Dashboard</div>
+                <div class="card-description">
+                    Access the financial management system dashboard for billing, invoicing, and payment tracking.
+                </div>
+                <a href="https://sites.google.com/buildwealthrealtors.com/director/billing" class="card-button" target="_blank">View Details</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-sm text-gray-500 p-4 md:p-8">
+        <p>&copy; <span id="copyright-year"></span> Build Wealth Realtors. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Function to update the main dashboard header text
+        function updateMainHeader(title, subtitle) {
+            const titleElement = document.getElementById('dashboard-main-title');
+            const messageElement = document.getElementById('dashboard-welcome-message');
+            if (titleElement) titleElement.textContent = title;
+            if (messageElement) messageElement.textContent = subtitle;
+        }
+
+        // Function to set a dynamic welcome message in the main header
+        function setDynamicWelcomeHeader(userName = "Director") {
+            const now = new Date();
+            const hour = now.getHours();
+            let greeting = "Welcome back";
+            if (hour < 12) greeting = "Good morning";
+            else if (hour < 18) greeting = "Good afternoon";
+            else greeting = "Good evening";
+            updateMainHeader("Dashboard", `${greeting}, ${userName}. Here's an overview of your company's performance.`);
+        }
+
+        // Function to get dynamic greeting for the popup
+        function getDynamicPopupGreeting(userName = "Director") {
+            const now = new Date();
+            const hour = now.getHours();
+            let greeting = "Hello";
+            if (hour < 12) greeting = "Good morning";
+            else if (hour < 18) greeting = "Good afternoon";
+            else greeting = "Good evening";
+            // You can wrap the username in a span if you want to style it differently via #popup-greeting span
+            return `${greeting}, <span>${userName}</span>!`; 
+        }
+
+        // Function to show the welcome popup
+        function showWelcomePopup() {
+            const popupOverlay = document.getElementById('welcome-popup');
+            const popupGreetingEl = document.getElementById('popup-greeting');
+            
+            popupGreetingEl.innerHTML = getDynamicPopupGreeting(); // Use innerHTML to allow span for username styling
+            popupOverlay.classList.add('active');
+        }
+
+        // Function to hide the popup and initialize page animations
+        function hidePopupAndStartAnimations() {
+            const popupOverlay = document.getElementById('welcome-popup');
+            popupOverlay.classList.remove('active');
+
+            setTimeout(() => {
+                setDynamicWelcomeHeader();
+                document.querySelector('.header').classList.add('animate');
+                animateDashboardCards();
+            }, 300); 
+        }
+
+        // Function to animate dashboard cards with stagger
+        function animateDashboardCards() {
+            const cards = document.querySelectorAll('.dashboard .card');
+            cards.forEach((card, index) => {
+                const delay = 150 + (index * 150); 
+                card.style.animationDelay = `${delay}ms`;
+                card.style.animationName = 'fadeInSlideUpCards';
+                card.style.animationFillMode = 'forwards';
+                card.style.animationDuration = '0.6s';
+                card.style.animationTimingFunction = 'ease-out';
+            });
+        }
+
+        // Event listener for when the DOM content is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded. Setting up popup and copyright.");
+            
+            const copyrightYearEl = document.getElementById('copyright-year');
+            if(copyrightYearEl) {
+                copyrightYearEl.textContent = new Date().getFullYear();
+            }
+
+            showWelcomePopup();
+
+            const popupCloseButton = document.getElementById('popup-close');
+            const popupEnterButton = document.getElementById('popup-enter-btn');
+
+            if(popupCloseButton) popupCloseButton.addEventListener('click', hidePopupAndStartAnimations);
+            if(popupEnterButton) popupEnterButton.addEventListener('click', hidePopupAndStartAnimations);
+        });
+    </script>
+</body>
+</html>
